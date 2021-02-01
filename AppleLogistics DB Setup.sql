@@ -715,12 +715,107 @@ create view [Stores in each Continent] as
 
 select * from [Stores in each Continent] order by [Number of Stores] desc
 
-select tbl_Stores.storeName as [Store], tbl_Stores.storeId as [Store No], tbl_Products.prodName as [Product], tbl_Items.itemPrice as [Price in Store]
-from tbl_Stores
-join tbl_Stores_Inventory
-on tbl_Stores.storeId = tbl_Stores_Inventory.storeId
-join tbl_Items
-on tbl_Stores_Inventory.itemId = tbl_Items.itemId
-join tbl_Products
-on tbl_Items.prodId = tbl_Products.prodId
-order by tbl_Stores.storeId
+create view [Store Inventories] as
+	select tbl_Stores.storeId as [Store Number], tbl_Products.prodName as [Product], max(tbl_Items.itemPrice) as [Price in Store], count(tbl_Stores_Inventory.itemId) as [Quantity]
+	from tbl_Stores
+	join tbl_Stores_Inventory
+	on tbl_Stores.storeId = tbl_Stores_Inventory.storeId
+	join tbl_Items
+	on tbl_Stores_Inventory.itemId = tbl_Items.itemId
+	join tbl_Products
+	on tbl_Items.prodId = tbl_Products.prodId
+	group by tbl_Stores.storeId, tbl_Products.prodName
+
+select * from [Store Inventories] order by [Store Number]
+
+create procedure proc_StoreInventory (@p_StoreId int)
+as
+begin
+	select * from [Store Inventories] where [Store Number] = @p_StoreId
+end
+
+exec proc_StoreInventory 250
+
+create view [Warehouse Inventories] as
+	select tbl_Warehouses.wareId as [Warehouse Number], tbl_Products.prodName as [Product], max(tbl_Items.itemPrice) as [Price], count(tbl_Warehouses_Inventory.itemId) as [Quantity]
+	from tbl_Warehouses
+	join tbl_Warehouses_Inventory
+	on tbl_Warehouses.wareId = tbl_Warehouses_Inventory.wareId
+	join tbl_Items
+	on tbl_Warehouses_Inventory.itemId = tbl_Items.itemId
+	join tbl_Products
+	on tbl_Items.prodId = tbl_Products.prodId
+	group by tbl_Warehouses.wareId, tbl_Products.prodName
+
+select * from [Warehouse Inventories] order by [Warehouse Number]
+
+create procedure proc_WarehouseInventory (@p_WareId int)
+as
+begin
+	select * from [Warehosue Inventories] where [Warehouse Number] = @p_WareId
+end
+
+exec proc_WarehouseInventory 20
+
+create view [Distributor Inventories] as
+	select tbl_Distributors.distId as [Distributor Number], tbl_Products.prodName as [Product], max(tbl_Items.itemPrice) as [Price in Store], count(tbl_Distributors_Inventory.itemId) as [Quantity]
+	from tbl_Distributors
+	join tbl_Distributors_Inventory
+	on tbl_Distributors.distId = tbl_Distributors_Inventory.distId
+	join tbl_Items
+	on tbl_Distributors_Inventory.itemId = tbl_Items.itemId
+	join tbl_Products
+	on tbl_Items.prodId = tbl_Products.prodId
+	group by tbl_Distributors.distId, tbl_Products.prodName
+
+select * from [Distributor Inventories] order by [Distributor Number]
+
+create procedure proc_DistributorInventory (@p_DistId int)
+as
+begin
+	select * from [Distributor Inventories] where [Distributor Number] = @p_DistId
+end
+
+exec proc_DistributorInventory 1
+
+create view [SubDistributor Inventories] as
+	select tbl_SubDistributors.subDistId as [SubDistributor Number], tbl_Products.prodName as [Product], max(tbl_Items.itemPrice) as [Price in Store], count(tbl_SubDistributors_Inventory.itemId) as [Quantity]
+	from tbl_SubDistributors
+	join tbl_SubDistributors_Inventory
+	on tbl_SubDistributors.subDistId = tbl_SubDistributors_Inventory.subDistId
+	join tbl_Items
+	on tbl_SubDistributors_Inventory.itemId = tbl_Items.itemId
+	join tbl_Products
+	on tbl_Items.prodId = tbl_Products.prodId
+	group by tbl_SubDistributors.subDistId, tbl_Products.prodName
+
+select * from [SubDistributor Inventories] order by [SubDistributor Number]
+
+create procedure proc_SubDistributorInventory (@p_SubDistId int)
+as
+begin
+	select * from [SubDistributor Inventories] where [SubDistributor Number] = @p_SubDistId
+end
+
+exec proc_SubDistributorInventory 1
+
+create view [Channel Partner Inventories] as
+	select tbl_ChannelPartners.chanId as [Channel Partner Number], tbl_Products.prodName as [Product], max(tbl_Items.itemPrice) as [Price in Store], count(tbl_ChannelPartners_Inventory.itemId) as [Quantity]
+	from tbl_ChannelPartners
+	join tbl_ChannelPartners_Inventory
+	on tbl_ChannelPartners.chanId = tbl_ChannelPartners_Inventory.chanId
+	join tbl_Items
+	on tbl_ChannelPartners_Inventory.itemId = tbl_Items.itemId
+	join tbl_Products
+	on tbl_Items.prodId = tbl_Products.prodId
+	group by tbl_ChannelPartners.chanId, tbl_Products.prodName
+
+select * from [Channel Partner Inventories] order by [Channel Partner Number]
+
+create procedure proc_ChannelPartnerInventory (@p_ChanId int)
+as
+begin
+	select * from [Channel Partner Inventories] where [Channel Partner Number] = @p_ChanId
+end
+
+exec proc_ChannelPartnerInventory 1
