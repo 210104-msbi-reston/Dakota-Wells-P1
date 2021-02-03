@@ -175,6 +175,14 @@ create table tbl_Returns
 	constraint fk_Returns_itemId foreign key(itemId) references tbl_Items
 )
 
+create table tbl_QC_Inventory
+(
+	itemId int,
+	dateRecieved datetime,
+	pendingRepair bit,
+	constraint fk_QC_itemId foreign key(itemId) references tbl_Items
+)
+
 -----------------------------------------------------------------------------------------------------------------
 --Junk Data Propagation
 
@@ -184,6 +192,10 @@ insert into tbl_Continents values('Europe')
 insert into tbl_Continents values('North America')
 insert into tbl_Continents values('Oceania')
 insert into tbl_Continents values('South America')
+
+insert into tbl_Customers values('Dakota', '123 ABC Street', 'dw@example.com', '123456789')
+insert into tbl_Customers values('Nikhil', '456 DEF Street', 'ns@example.com', '987654321')
+insert into tbl_Customers values('Dakota', '789 GHI Street', 'pk@example.com', '564738291')
 
 create procedure proc_NewFactory
 as
@@ -410,6 +422,25 @@ end
 
 exec proc_NewStore
 
+alter procedure proc_FillStores
+as
+begin
+	declare @storeCount int = 0
+	declare @productCount int = 0
+	while @storeCount < 4112
+	begin
+	select @storeCount = @storeCount + 1
+		while @productCount < 26
+		begin
+			select @productCount = @productCount + 1
+			exec proc_StoreOrder @storeCount, @productCount, 1
+		end
+		select @productCount = 0
+	end
+end
+
+exec proc_FillStores
+
 -----------------------------------------------------------------------------------------------------------------
 --Functions
 
@@ -631,25 +662,6 @@ exec proc_StoreOrder 2, 2, 10
 
 select * from tbl_Products
 
-alter procedure proc_FillStores
-as
-begin
-	declare @storeCount int = 0
-	declare @productCount int = 0
-	while @storeCount < 4112
-	begin
-	select @storeCount = @storeCount + 1
-		while @productCount < 26
-		begin
-			select @productCount = @productCount + 1
-			exec proc_StoreOrder @storeCount, @productCount, 1
-		end
-		select @productCount = 0
-	end
-end
-
-exec proc_FillStores
-
 --delete from tbl_Stores_Inventory
 --delete from tbl_ChannelPartners_Inventory
 --delete from tbl_SubDistributors_Inventory
@@ -758,7 +770,7 @@ end
 exec proc_WarehouseInventory 20
 
 create view [Distributor Inventories] as
-	select tbl_Distributors.distId as [Distributor Number], tbl_Products.prodName as [Product], max(tbl_Items.itemPrice) as [Price in Store], count(tbl_Distributors_Inventory.itemId) as [Quantity]
+	select tbl_Distributors.distId as [Distributor Number], tbl_Products.prodName as [Product], max(tbl_Items.itemPrice) as [Price], count(tbl_Distributors_Inventory.itemId) as [Quantity]
 	from tbl_Distributors
 	join tbl_Distributors_Inventory
 	on tbl_Distributors.distId = tbl_Distributors_Inventory.distId
@@ -779,7 +791,7 @@ end
 exec proc_DistributorInventory 1
 
 create view [SubDistributor Inventories] as
-	select tbl_SubDistributors.subDistId as [SubDistributor Number], tbl_Products.prodName as [Product], max(tbl_Items.itemPrice) as [Price in Store], count(tbl_SubDistributors_Inventory.itemId) as [Quantity]
+	select tbl_SubDistributors.subDistId as [SubDistributor Number], tbl_Products.prodName as [Product], max(tbl_Items.itemPrice) as [Price], count(tbl_SubDistributors_Inventory.itemId) as [Quantity]
 	from tbl_SubDistributors
 	join tbl_SubDistributors_Inventory
 	on tbl_SubDistributors.subDistId = tbl_SubDistributors_Inventory.subDistId
@@ -800,7 +812,7 @@ end
 exec proc_SubDistributorInventory 1
 
 create view [Channel Partner Inventories] as
-	select tbl_ChannelPartners.chanId as [Channel Partner Number], tbl_Products.prodName as [Product], max(tbl_Items.itemPrice) as [Price in Store], count(tbl_ChannelPartners_Inventory.itemId) as [Quantity]
+	select tbl_ChannelPartners.chanId as [Channel Partner Number], tbl_Products.prodName as [Product], max(tbl_Items.itemPrice) as [Price], count(tbl_ChannelPartners_Inventory.itemId) as [Quantity]
 	from tbl_ChannelPartners
 	join tbl_ChannelPartners_Inventory
 	on tbl_ChannelPartners.chanId = tbl_ChannelPartners_Inventory.chanId
@@ -819,3 +831,109 @@ begin
 end
 
 exec proc_ChannelPartnerInventory 1
+
+create procedure proc_NewOrder(@p_StoreId int, @p_custId int, @p_ProdId int, @p_Qty int)
+as
+begin
+	declare @count int = 0
+	declare @itemId int
+	insert into tbl_Orders values(@p_StoreId, @p_custId, GETDATE())
+	declare @orderID int = SCOPE_IDENTITY()
+	while @count < @p_Qty
+	begin
+		set @itemId = (select min(tbl_Stores_Inventory.itemId)
+		from tbl_Stores_Inventory
+		join tbl_Items
+		on tbl_Stores_Inventory.itemId = tbl_Items.itemId
+		join tbl_Products
+		on tbl_Items.prodId = tbl_Products.prodId
+		where tbl_Products.prodId = @p_ProdId and tbl_Stores_Inventory.storeId = @p_StoreId)
+		if @itemId is not null
+		begin
+			insert into tbl_OrdersItems values(@orderID,@itemId)
+			delete from tbl_Stores_Inventory where itemId = @itemId
+			select @count = @count + 1
+		end
+		else
+		begin
+			exec proc_StoreOrder @p_StoreId, @p_ProdId, @p_Qty
+		end
+	end
+end
+
+exec proc_NewOrder 1, 1, 1, 1
+exec proc_NewOrder 56, 2, 4, 3
+exec proc_NewOrder 32, 3, 2, 5
+
+
+select * from tbl_Orders
+select * from tbl_OrdersItems
+
+create view [Order History] as
+	select tbl_Orders.orderId as [Order Number], tbl_Orders.custId as [Customer Number], tbl_Customers.custName as [Name], tbl_Customers.custEmail as [Email], tbl_Products.prodName as [Product], SUM(tbl_Items.itemPrice) as [Total Price]
+		from tbl_Orders
+		join tbl_Customers
+		on tbl_Orders.custId = tbl_Customers.custId
+		join tbl_OrdersItems
+		on tbl_Orders.orderId = tbl_OrdersItems.orderId
+		join tbl_Items
+		on tbl_OrdersItems.itemId = tbl_Items.itemId
+		join tbl_Products
+		on tbl_Items.prodId = tbl_Products.prodId
+		group by tbl_Orders.orderId, tbl_Products.prodName, tbl_Orders.custId, tbl_Customers.custName, tbl_Customers.custEmail
+
+create procedure proc_CustomerOrderHistory(@p_CustId int)
+as
+begin
+	select * from [Order History] where [Customer Number] = @p_CustId
+end
+
+exec proc_CustomerOrderHistory 1
+
+create procedure proc_NewReturn(@p_ItemId int, @p_ReturnReason varchar(500))
+as
+begin
+	insert into tbl_Returns values(@p_ItemId, GETDATE(), @p_ReturnReason)
+end
+
+alter trigger trg_Returns
+on tbl_Returns
+after insert
+as
+begin
+	declare @itemId int
+	declare @storeId int
+	declare @chanId int
+	declare @subDistId int
+	declare @distId int
+	declare @wareId int
+	set @itemId = (select itemId from inserted)
+	set @storeId = (select storeId from tbl_Items where itemId = @itemId)
+	set @chanId = (select chanId from tbl_Items where itemId = @itemId)
+	set @subDistId = (select subDistId from tbl_Items where itemId = @itemId)
+	set @distId = (select distId from tbl_Items where itemId = @itemId)
+	set @wareId = (select wareId from tbl_Items where itemId = @itemId)
+
+	insert into tbl_Stores_Inventory values(@storeId, @itemId, GETDATE())
+	delete from tbl_Stores_Inventory where itemId = @itemId
+
+	insert into tbl_ChannelPartners_Inventory values(@chanId, @itemId, GETDATE())
+	delete from tbl_ChannelPartners_Inventory where itemId = @itemId
+
+	insert into tbl_SubDistributors_Inventory values(@subDistId, @itemId, GETDATE())
+	delete from tbl_SubDistributors_Inventory where itemId = @itemId
+
+	insert into tbl_Distributors_Inventory values(@distId, @itemId, GETDATE())
+	delete from tbl_Distributors_Inventory where itemId = @itemId
+
+	insert into tbl_Warehouses_Inventory values(@wareId, @itemId, GETDATE())
+	delete from tbl_Warehouses_Inventory where itemId = @itemId
+
+	insert into tbl_QC_Inventory values(@itemId, GETDATE(), 1)
+end
+
+exec proc_NewReturn 1368, 'Dead on arrival'
+
+select * from tbl_Returns
+
+select * from tbl_QC_Inventory
