@@ -1,46 +1,48 @@
-# PROJECT NAME
+# Apple Inc Device Manufacturing Database
 
 ## Project Description
 
-Here goes your awesome project description!
+This project is meant to mimic the supply chain of Apple Inc. It tracks as each individual product is produced, where it currently sits in the supply chain, when it is sold, and if it is returned. All of this information about the product is permanently stored and can be tracked by serial number.
 
 ## Technologies Used
 
-* Tech 1 - version 1.0
-* Tech 2 - version 2.0
-* Tech 3 - version 3.0
+* Microsoft SQL Server
+* TSQL
+* SSIS
 
 ## Features
 
 List of features ready and TODOs for future development
-* Awesome feature 1
-* Awesome feature 2
-* Awesome feature 3
+* Assigns each item a serial number when produced that can be used to track its history.
+* Fills the database with sample data automatically, using TSQL Procedures. 
+* Implements an ordering system that sells the product to the customer.
+* Implements a return system that sends the product back to the factory, through the original channels in which it was sent down.
 
 To-do list:
-* Wow improvement to be done 1
-* Wow improvement to be done 2
+* Build a data warehouse based on the serial number.
+* Create visualizations to assist the business using SSRS and Power BI.
 
 ## Getting Started
    
-(include git clone command)
-(include all environment setup steps)
+git clone https://github.com/210104-msbi-reston/Dakota-Wells-P1.git
 
-> Be sure to include BOTH Windows and Unix command  
-> Be sure to mention if the commands only work on a specific platform (eg. AWS, GCP)
-
-- All the `code` required to get started
-- Images of what it should look like
+Run the query in SQL Server Management studio.
 
 ## Usage
 
-> Here, you instruct other people on how to use your project after they’ve installed it. This would also be a good place to include screenshots of your project in action.
+Views:
+* [Warehouses by Country] - View number of warehouses in each country.
+* [Full Supply Chain] - Shows where each store sources its products from.
+* [Stores in each Continent] - Shows stores by continent.
+* [%%% Inventories] - Shows the inventory of the respective business type.
+* [Order History] - Shows all order history.
 
-## Contributors
-
-> Here list the people who have contributed to this project. (ignore this section, if its a solo project)
+Procedures:
+* proc_%%%Inventory - Shows inventory of a specific business with provided ID.
+* proc_NewOrder - Creates order with provided product, store, customer, and quantity.
+* proc_CustomerOrderHistory - Shows order history of customer with provided ID.
+* proc_NewReturn - Returns item with provided serial number.
 
 ## License
 
-This project uses the following license: [<license_name>](<link>).
-
+This project uses the following license: [GNU GPLv3](https://www.gnu.org/licenses/gpl-3.0.en.html).
