@@ -932,8 +932,12 @@ begin
 	insert into tbl_QC_Inventory values(@itemId, GETDATE(), 1)
 end
 
-exec proc_NewReturn 1368, 'Dead on arrival'
+exec proc_NewReturn 736, 'Screen Cracked'
 
 select * from tbl_Returns
 
+select * from tbl_OrdersItems
+
 select * from tbl_QC_Inventory
+
+select * from tbl_Items where itemId = 1368
