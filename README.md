@@ -12,7 +12,7 @@ This project is meant to mimic the supply chain of Apple Inc. It tracks as each 
 
 ## Features
 
-List of features ready and TODOs for future development
+List of features:
 * Assigns each item a serial number when produced that can be used to track its history.
 * Fills the database with sample data automatically, using TSQL Procedures. 
 * Implements an ordering system that sells the product to the customer.
@@ -26,7 +26,7 @@ To-do list:
    
 git clone https://github.com/210104-msbi-reston/Dakota-Wells-P1.git
 
-Run the query in SQL Server Management studio.
+Run the query in SQL Server Management Studio.
 
 ## Usage
 
